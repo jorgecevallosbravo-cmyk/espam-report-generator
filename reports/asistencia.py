@@ -197,15 +197,18 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
     # Footer row inside longtable
     footer_row = (
         r"\noalign{\vspace{1.5cm}}" + "\n"
-        r"\multicolumn{21}{@{}l@{}}{"
-        r"{\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} \hspace{2mm}"
+        + r"\multicolumn{21}{@{}l@{}}{"
+        + r"{\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} \hspace{2mm}"
         + r"{\fontsize{9}{9}\selectfont " + tex_s(fecha_examen) + r"}"
         + r"} \\" + "\n"
         + r"\multicolumn{21}{@{}l@{}}{"
         + r"\hspace{1.58mm}{\fontsize{9}{9}\selectfont\bfseries SUPLETORIO:} \hspace{1mm}"
         + r"{\fontsize{9}{9}\selectfont " + tex_s(fecha_sup) + r"}"
         + r"\hfill"
-        + r"{\fontsize{9}{9}\selectfont DOCENTE}"
+        + r"\begin{minipage}[t]{80mm}\centering"
+        + r"{\fontsize{9}{9}\selectfont " + tex_s(FACILITADOR) + r"} \\"
+        + r"{\fontsize{9}{9}\selectfont\bfseries DOCENTE}"
+        + r"\end{minipage}"
         + r"} \\" + "\n"
     )
 
