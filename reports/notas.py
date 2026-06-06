@@ -99,10 +99,8 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
             row,
         ))
     if len(rows_list) >= 2:
-        rows_list[-2] = "\\nopagebreak[4]
-" + rows_list[-2]
-        rows_list[-1] = "\\nopagebreak[4]
-" + rows_list[-1]
+        rows_list[-2] = "\\nopagebreak[4]\n" + rows_list[-2]
+        rows_list[-1] = "\\nopagebreak[4]\n" + rows_list[-1]
     rows_latex = "".join(rows_list)
 
     # Averages row
