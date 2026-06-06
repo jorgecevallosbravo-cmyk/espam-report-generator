@@ -7,8 +7,19 @@ import tempfile
 import shutil
 
 # Logo path — stored as logo.png in the repo root
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOGO_PATH = os.path.join(_ROOT, 'logo.png')
+def _find_logo():
+    candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo.png'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logo.png'),
+        '/mount/src/espam-report-generator/logo.png',
+        os.path.join(os.getcwd(), 'logo.png'),
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    raise FileNotFoundError(f"logo.png not found. Tried: {candidates}")
+
+LOGO_PATH = _find_logo()
 
 # For WeasyPrint (tutorias) — read logo as base64 data URI
 def _get_logo_data_uri():
