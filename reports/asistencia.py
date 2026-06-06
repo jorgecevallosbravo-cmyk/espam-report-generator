@@ -20,6 +20,7 @@ TEMPLATE = r"""\documentclass[11pt]{article}
 \usepackage{longtable}
 \usepackage{multirow}
 \usepackage{graphicx}
+\usepackage{needspace}
 \usepackage[scaled]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \definecolor{espamTeal}{RGB}{0, 169, 158}
@@ -78,6 +79,7 @@ TEMPLATE = r"""\documentclass[11pt]{article}
 %%STUDENT_ROWS%%
 \end{longtable}
 \end{center}
+\Needspace{4cm}
 \vspace{6mm}
 \begin{center}
     \begin{tabular}{@{} m{120mm} >{\centering\arraybackslash}m{80mm} @{}}
@@ -180,6 +182,12 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
             row.Codes,
             is_mensual,
         ))
+
+    if len(rows_latex) >= 2:
+        rows_latex[-2] = "\\nopagebreak[4]
+" + rows_latex[-2]
+        rows_latex[-1] = "\\nopagebreak[4]
+" + rows_latex[-1]
 
     # Headers
     day_cells = "".join(str(d.day).zfill(2) + "&" for d in class_dates)
