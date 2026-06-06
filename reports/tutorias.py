@@ -148,8 +148,8 @@ def generate_tutorias(
 <table class="header-table">
 <tr>
   <td>
-    <div style="font-size:10.5pt;font-weight:bold">CONTROL DE TUTOR&Iacute;AS ACAD&Eacute;MICAS</div>
-    <div style="font-weight:bold">UNIDAD ACAD&Eacute;MICA: JEFATURA DEL CENTRO DE IDIOMAS</div>
+    <div style="font-size:10.5pt;font-weight:bold;margin-bottom:4pt">CONTROL DE TUTOR&Iacute;AS ACAD&Eacute;MICAS</div>
+    <div style="font-weight:bold;margin-bottom:3pt">UNIDAD ACAD&Eacute;MICA: JEFATURA DEL CENTRO DE IDIOMAS</div>
     <div style="font-weight:bold">PERIODO ACAD&Eacute;MICO: {esc_html(cycle_start)} - {esc_html(cycle_end)}</div>
   </td>
   <td>
@@ -192,8 +192,8 @@ def generate_tutorias(
 
 <table class="sig-table">
 <tr>
-  <td><span class="sig-line">{FACILITADOR_SHORT}<br><b>DOCENTE TUTOR</b></span></td>
-  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
+  <td><span class="sig-line">{FACILITADOR_SHORT}<br><br><b>DOCENTE TUTOR</b></span></td>
+  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
 </tr>
 </table>
 
