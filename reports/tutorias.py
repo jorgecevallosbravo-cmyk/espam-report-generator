@@ -183,7 +183,9 @@ def generate_tutorias(
 </table>
 
 <div style="margin-top:6pt;font-size:8.5pt">
-  <b>TOTAL DE ESTUDIANTES TUTORADOS:</b> {len(sessions)}<br style="line-height:3pt">
+  <b>TOTAL DE ESTUDIANTES TUTORADOS:</b> {len(sessions)}
+</div>
+<div style="margin-top:6pt;font-size:8.5pt">
   <b>TOTAL DE HORAS EMPLEADAS:</b> {len(sessions)}
 </div>
 
