@@ -198,7 +198,7 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
     footer_row = (
         r"\noalign{\vspace{1.5cm}}" + "\n"
         + r"\multicolumn{21}{@{}l@{}}{"
-        + r"{\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} \hspace{2mm}"
+        + r"{\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} "
         + r"{\fontsize{9}{9}\selectfont " + tex_s(fecha_examen) + r"}"
         + r"} \\" + "\n"
         + r"\multicolumn{21}{@{}l@{}}{"
