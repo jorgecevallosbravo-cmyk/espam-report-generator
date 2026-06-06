@@ -113,7 +113,7 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
     ]
     # Signature as borderless multicolumn row inside longtable
     sig_row = (
-        r"\noalign{\vspace{0.5cm}}"
+        r"\noalign{\vspace{1.5cm}}"
         r"\multicolumn{21}{c}{"
         r"\begin{minipage}{8cm}\centering"
         r"\rule{6cm}{0.4pt}\\"
