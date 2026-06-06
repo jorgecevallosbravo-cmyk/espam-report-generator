@@ -83,7 +83,12 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
                    is_mensual: bool = False) -> bytes:
 
     nivel = NIVEL_MAP.get(str(level_digit), "Unknown")
-    fecha = cycle_data['fin']
+    if is_mensual:
+        from datetime import datetime, timedelta
+        inicio_dt = datetime.strptime(cycle_data['inicio'], "%d/%m/%Y")
+        fecha = (inicio_dt + timedelta(weeks=3)).strftime("%d/%m/%Y")
+    else:
+        fecha = cycle_data['informe_docente']
 
     rows_latex = ""
     for i, (_, row) in enumerate(df.iterrows(), 1):
