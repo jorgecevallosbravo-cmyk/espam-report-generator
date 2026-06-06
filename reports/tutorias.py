@@ -182,7 +182,7 @@ def generate_tutorias(
 <tbody>{session_rows}</tbody>
 </table>
 
-<div style="margin-top:6pt;font-size:8.5pt">
+<div style="margin-top:6pt;font-size:8.5pt;line-height:1.6">
   <b>TOTAL DE ESTUDIANTES TUTORADOS:</b> {len(sessions)}<br>
   <b>TOTAL DE HORAS EMPLEADAS:</b> {len(sessions)}
 </div>
@@ -193,8 +193,8 @@ def generate_tutorias(
 
 <table class="sig-table">
 <tr>
-  <td><span class="sig-line">{FACILITADOR_SHORT}<br><b>DOCENTE TUTOR</b></span></td>
-  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
+  <td><span class="sig-line">{FACILITADOR_SHORT}<br><br><b>DOCENTE TUTOR</b></span></td>
+  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
 </tr>
 </table>
 
