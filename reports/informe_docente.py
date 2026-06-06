@@ -185,8 +185,13 @@ Docente de la Unidad de Centro de Idiomas
 \noindent\textbf{MOODLE:}
 
 \vspace{0.3em}
-\noindent """ + moodle_tex + r"""
+\noindent """ + moodle_tex + (r"""
+
+\vspace{0.5em}
+\noindent\includegraphics[width=0.6\textwidth]{moodle_screenshot.png}
+""" if moodle_img else "") + r"""
 
 \end{document}"""
 
-    return compile_latex(latex, 'informe_docente')
+    return compile_latex(latex, 'informe_docente',
+                         extra_files={"moodle_screenshot.png": moodle_img[1]} if moodle_img else {})
