@@ -8,7 +8,7 @@ from cycles import NIVEL_MAP
 TEMPLATE_HEADER = r"""\documentclass[11pt]{article}
 \usepackage[utf8]{inputenc} \usepackage[T1]{fontenc}
 \usepackage[letterpaper, landscape, margin=1.0cm, top=1.2cm]{geometry}
-\usepackage{graphicx, array, longtable, colortbl, xcolor, rotating}
+\usepackage{graphicx, array, longtable, colortbl, xcolor, rotating, needspace}
 \usepackage[scaled]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \newcommand{\arialbold}{\fontfamily{phv}\selectfont\bfseries\fontsize{11}{13}\selectfont}
@@ -90,14 +90,20 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
     else:
         fecha = cycle_data['informe_docente']
 
-    rows_latex = ""
+    rows_list = []
     for i, (_, row) in enumerate(df.iterrows(), 1):
-        rows_latex += _make_student_row(
+        rows_list.append(_make_student_row(
             i,
             tex_s(str(row['IDNumber'])),
             tex_s(str(row['FullName'])),
             row,
-        )
+        ))
+    if len(rows_list) >= 2:
+        rows_list[-2] = "\\nopagebreak[4]
+" + rows_list[-2]
+        rows_list[-1] = "\\nopagebreak[4]
+" + rows_list[-1]
+    rows_latex = "".join(rows_list)
 
     # Averages row
     ca = ['LO_A','EQ_A','LO_B','EQ_B','LO_C','EQ_C','LO_D','EQ_D',
@@ -117,7 +123,7 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
         + r" & \multicolumn{1}{c}{} \\ \end{longtable}"
     )
 
-    sig = (r"\vspace{1.9cm} \begin{center} \begin{minipage}{8cm} \centering "
+    sig = (r"\Needspace{5cm} \vspace{1.9cm} \begin{center} \begin{minipage}{8cm} \centering "
            r"\rule{6cm}{0.4pt} \\ \vspace{4pt} {\arialbold DOCENTE} "
            r"\end{minipage} \end{center} \end{document}")
 
