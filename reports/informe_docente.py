@@ -142,23 +142,43 @@ Docente de la Unidad de Centro de Idiomas
 \noindent{\small\itshape (Asistencia correspondiente al periodo mensual hasta la fecha indicada en este reporte).}
 
 \vspace{0.3em}
-{\fontsize{9}{9}\selectfont
-\begin{longtable}{|c|c|>{\centering\arraybackslash}p{7.5cm}|c|c|c|c|}
+\setlength{\arrayrulewidth}{0.6pt}
+\renewcommand{\arraystretch}{1.5}
+{\fontsize{9}{10}\selectfont
+\begin{longtable}{|>{\centering\arraybackslash}m{6mm}|>{\centering\arraybackslash}m{26mm}|>{\centering\arraybackslash}m{75mm}|>{\centering\arraybackslash}m{8mm}|>{\centering\arraybackslash}m{8mm}|>{\centering\arraybackslash}m{8mm}|>{\centering\arraybackslash}m{8mm}|}
 \hline
-\rowcolor{espamTeal}\color{white}N\textdegree & \color{white}C\'edula & \color{white}Apellidos y Nombres & \color{white}D1 & \color{white}D2 & \color{white}D3 & \color{white}D4 \\ \hline
+\rowcolor{espamTeal}
+\centering{\bfseries\color{white}N\textdegree} &
+\centering{\bfseries\color{white}C\'edula} &
+\centering{\bfseries\color{white}Apellidos y Nombres} &
+\centering{\bfseries\color{white}D1} &
+\centering{\bfseries\color{white}D2} &
+\centering{\bfseries\color{white}D3} &
+\centering\arraybackslash{\bfseries\color{white}D4} \\ \hline
 """ + att_annex_rows + r"""
 \end{longtable}}
+\renewcommand{\arraystretch}{1}
 
-\vspace{0.5em}
+\vspace{0.8em}
 \noindent\textbf{NOTAS:} {\small\itshape (Logros de Aprendizaje A y B)}
 
 \vspace{0.3em}
-{\fontsize{9}{9}\selectfont
-\begin{longtable}{|c|c|>{\centering\arraybackslash}p{7.5cm}|c|c|c|c|c|}
+\renewcommand{\arraystretch}{1.5}
+{\fontsize{9}{10}\selectfont
+\begin{longtable}{|>{\centering\arraybackslash}m{6mm}|>{\centering\arraybackslash}m{26mm}|>{\centering\arraybackslash}m{62mm}|>{\centering\arraybackslash}m{10mm}|>{\centering\arraybackslash}m{10mm}|>{\centering\arraybackslash}m{10mm}|>{\centering\arraybackslash}m{10mm}|>{\centering\arraybackslash}m{10mm}|}
 \hline
-\rowcolor{espamTeal}\color{white}N\textdegree & \color{white}C\'edula & \color{white}Estudiante & \color{white}A & \color{white}EQ & \color{white}B & \color{white}EQ & \color{white}Prom. \\ \hline
+\rowcolor{espamTeal}
+\centering{\bfseries\color{white}N\textdegree} &
+\centering{\bfseries\color{white}C\'edula} &
+\centering{\bfseries\color{white}Apellidos y Nombres} &
+\centering{\bfseries\color{white}A} &
+\centering{\bfseries\color{white}EQ} &
+\centering{\bfseries\color{white}B} &
+\centering{\bfseries\color{white}EQ} &
+\centering\arraybackslash{\bfseries\color{white}Prom.} \\ \hline
 """ + grade_rows + r"""
 \end{longtable}}
+\renewcommand{\arraystretch}{1}
 
 \vspace{0.5em}
 \noindent\textbf{MOODLE:}
