@@ -24,6 +24,7 @@ def generate_informe_docente(
     attendance_strategies: dict,
     moodle_all_enrolled: bool,
     moodle_missing_names: str = "",
+    moodle_img=None,
 ) -> bytes:
 
     nivel  = NIVEL_MAP_ES.get(str(level_digit), "Nivel")
