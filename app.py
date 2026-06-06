@@ -199,6 +199,14 @@ for c in courses:
                 key=f"moodle_names_{code}",
             )
 
+        moodle_screenshot = st.file_uploader(
+            "Moodle screenshot *(optional)*",
+            type=["png", "jpg", "jpeg"],
+            key=f"moodle_img_{code}",
+        )
+        moodle_img_data = (moodle_screenshot.name, moodle_screenshot.read()) \
+            if moodle_screenshot else None
+
         course_inputs[code] = {
             "horario":          horario,
             "df_mensual":       df_mensual,
@@ -206,6 +214,7 @@ for c in courses:
             "att_strategies":   att_strategies,
             "moodle_all":       moodle_all,
             "moodle_names":     moodle_names,
+            "moodle_img":       moodle_img_data,
         }
 
 st.markdown("---")
@@ -351,6 +360,7 @@ for c in courses:
             df_mensual, cdata, code, level, cls,
             inp["acad_strategies"], inp["att_strategies"],
             inp["moodle_all"], inp["moodle_names"],
+            inp.get("moodle_img"),
         )
     except Exception as e:
         st.error(f"{code} Informe Docente failed: {e}")
