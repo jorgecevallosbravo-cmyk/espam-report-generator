@@ -184,10 +184,8 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
         ))
 
     if len(rows_latex) >= 2:
-        rows_latex[-2] = "\\nopagebreak[4]
-" + rows_latex[-2]
-        rows_latex[-1] = "\\nopagebreak[4]
-" + rows_latex[-1]
+        rows_latex[-2] = "\\nopagebreak[4]\n" + rows_latex[-2]
+        rows_latex[-1] = "\\nopagebreak[4]\n" + rows_latex[-1]
 
     # Headers
     day_cells = "".join(str(d.day).zfill(2) + "&" for d in class_dates)
