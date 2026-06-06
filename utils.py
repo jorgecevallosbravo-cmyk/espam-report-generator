@@ -1,38 +1,38 @@
 """Shared utilities for all report generators."""
-
+ 
 from logo_b64 import LOGO_B64
-
+ 
 LOGO_DATA_URI = f"data:image/png;base64,{LOGO_B64}"
-
+ 
 FACILITADOR     = "JORGE BIENVENIDO CEVALLOS BRAVO"
 FACILITADOR_SHORT = "Jorge Cevallos Bravo"
 COORDINADOR     = "Lic. Carlos Enrique Alcívar Zambrano, Mg."
 UCI_RESPONSIBLE = "Ing. José Rafael Vera Vera, Mg."
-
+ 
 MODULO_WORDS = {
     "1": "PRIMERO", "2": "SEGUNDO", "3": "TERCERO", "4": "CUARTO",
     "5": "QUINTO",  "6": "SEXTO",   "7": "SÉPTIMO", "8": "OCTAVO",
 }
-
+ 
 TEAL   = "#00A99D"
 WHITE  = "#FFFFFF"
-
-
+ 
+ 
 def fmt(v) -> str:
     """Format float as XX,XX (Spanish decimal comma)."""
     return f"{float(v):.2f}".replace('.', ',')
-
-
+ 
+ 
 def esc_html(text: str) -> str:
     """Escape HTML special characters."""
     return (str(text)
             .replace('&', '&amp;')
             .replace('<', '&lt;')
             .replace('>', '&gt;'))
-
-
+ 
+ 
 # ── Topic database (for Reporte de Tutorías) ──────────────────────────────
-
+ 
 TOPIC_DATABASE = {
     "1": [
         "Possessive adjectives; the verb be; affirmative statements: Introducing yourself and friends",
