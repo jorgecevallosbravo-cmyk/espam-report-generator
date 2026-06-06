@@ -1,205 +1,314 @@
 """
-Smart file ingestion module.
-Accepts raw Moodle ODS/CSV exports or clean semicolon-delimited CSVs.
-Normalizes everything into a standard DataFrame with columns:
-  FullName, LastName, FirstName, IDNumber,
-  LO_A, LO_B, LO_C, LO_D, Examen, Supletorio
+Hardcoded cycle calendar extracted from PLANIFICACIÓN DE CICLOS 2026.
+Keys are cycle codes as they appear in Moodle filenames.
+All dates are DD/MM/YYYY strings.
 """
 
-import re
-import io
-import pandas as pd
+CYCLES = {
+    "C72I": {
+        "tipo": "INTENSIVO 1",
+        "inicio": "19/01/2026",
+        "fin": "11/02/2026",
+        "examen": "11/02/2026",
+        "supletorio": "12/02/2026",
+        "silabo_docente": "19/01/2026",
+        "silabo_coord": "20/01/2026",
+        "silabo_resp": "21/01/2026",
+        "informe_docente": "13/02/2026",
+        "informe_resp": "16/02/2026",
+        "periodo": "JANUARY 2026 - FEBRUARY 2026",
+    },
+    "C72II": {
+        "tipo": "INTENSIVO 2",
+        "inicio": "18/02/2026",
+        "fin": "11/03/2026",
+        "examen": "11/03/2026",
+        "supletorio": "12/03/2026",
+        "silabo_docente": "16/02/2026",
+        "silabo_coord": "17/02/2026",
+        "silabo_resp": "18/02/2026",
+        "informe_docente": "13/03/2026",
+        "informe_resp": "16/03/2026",
+        "periodo": "FEBRUARY 2026 - MARCH 2026",
+    },
+    "C14NM": {
+        "tipo": "REGULAR",
+        "inicio": "19/01/2026",
+        "fin": "11/03/2026",
+        "examen": "11/03/2026",
+        "supletorio": "12/03/2026",
+        "silabo_docente": "19/01/2026",
+        "silabo_coord": "20/01/2026",
+        "silabo_resp": "21/01/2026",
+        "informe_docente": "12/03/2026",
+        "informe_resp": "16/03/2026",
+        "periodo": "JANUARY 2026 - MARCH 2026",
+    },
+    "C72E": {
+        "tipo": "ESPECIAL (VACACIONAL)",
+        "inicio": "23/03/2026",
+        "fin": "16/04/2026",
+        "examen": "16/04/2026",
+        "supletorio": "17/04/2026",
+        "silabo_docente": "23/03/2026",
+        "silabo_coord": "24/03/2026",
+        "silabo_resp": "25/03/2026",
+        "informe_docente": "17/04/2026",
+        "informe_resp": "20/04/2026",
+        "periodo": "MARCH 2026 - APRIL 2026",
+    },
+    "C14NME": {
+        "tipo": "ESPECIAL (VACACIONAL)",
+        "inicio": "23/03/2026",
+        "fin": "16/04/2026",
+        "examen": "16/04/2026",
+        "supletorio": "17/04/2026",
+        "silabo_docente": "23/03/2026",
+        "silabo_coord": "24/03/2026",
+        "silabo_resp": "25/03/2026",
+        "informe_docente": "17/04/2026",
+        "informe_resp": "20/04/2026",
+        "periodo": "MARCH 2026 - APRIL 2026",
+    },
+    "C73": {
+        "tipo": "REGULAR",
+        "inicio": "27/04/2026",
+        "fin": "22/06/2026",
+        "examen": "22/06/2026",
+        "supletorio": "23/06/2026",
+        "silabo_docente": "27/04/2026",
+        "silabo_coord": "28/04/2026",
+        "silabo_resp": "29/04/2026",
+        "informe_docente": "23/06/2026",
+        "informe_resp": "25/06/2026",
+        "periodo": "APRIL 2026 - JUNE 2026",
+    },
+    "C73I": {
+        "tipo": "INTENSIVO 1",
+        "inicio": "27/04/2026",
+        "fin": "20/05/2026",
+        "examen": "20/05/2026",
+        "supletorio": "21/05/2026",
+        "silabo_docente": "27/04/2026",
+        "silabo_coord": "28/04/2026",
+        "silabo_resp": "29/04/2026",
+        "informe_docente": "21/05/2026",
+        "informe_resp": "25/05/2026",
+        "periodo": "APRIL 2026 - MAY 2026",
+    },
+    "C73II": {
+        "tipo": "INTENSIVO 2",
+        "inicio": "26/05/2026",
+        "fin": "22/06/2026",
+        "examen": "22/06/2026",
+        "supletorio": "23/06/2026",
+        "silabo_docente": "26/05/2026",
+        "silabo_coord": "27/05/2026",
+        "silabo_resp": "28/05/2026",
+        "informe_docente": "23/06/2026",
+        "informe_resp": "25/06/2026",
+        "periodo": "MAY 2026 - JUNE 2026",
+    },
+    "C15NM": {
+        "tipo": "REGULAR",
+        "inicio": "27/04/2026",
+        "fin": "22/06/2026",
+        "examen": "22/06/2026",
+        "supletorio": "23/06/2026",
+        "silabo_docente": "27/04/2026",
+        "silabo_coord": "28/04/2026",
+        "silabo_resp": "29/04/2026",
+        "informe_docente": "23/06/2026",
+        "informe_resp": "25/06/2026",
+        "periodo": "APRIL 2026 - JUNE 2026",
+    },
+    "C74": {
+        "tipo": "REGULAR",
+        "inicio": "29/06/2026",
+        "fin": "24/08/2026",
+        "examen": "24/08/2026",
+        "supletorio": "25/08/2026",
+        "silabo_docente": "29/06/2026",
+        "silabo_coord": "30/06/2026",
+        "silabo_resp": "01/07/2026",
+        "informe_docente": "25/08/2026",
+        "informe_resp": "27/08/2026",
+        "periodo": "JUNE 2026 - AUGUST 2026",
+    },
+    "C74I": {
+        "tipo": "INTENSIVO 1",
+        "inicio": "29/06/2026",
+        "fin": "23/07/2026",
+        "examen": "23/07/2026",
+        "supletorio": "24/07/2026",
+        "silabo_docente": "29/06/2026",
+        "silabo_coord": "30/06/2026",
+        "silabo_resp": "01/07/2026",
+        "informe_docente": "24/07/2026",
+        "informe_resp": "27/07/2026",
+        "periodo": "JUNE 2026 - JULY 2026",
+    },
+    "C74II": {
+        "tipo": "INTENSIVO 2",
+        "inicio": "29/07/2026",
+        "fin": "25/08/2026",
+        "examen": "25/08/2026",
+        "supletorio": "26/08/2026",
+        "silabo_docente": "29/07/2026",
+        "silabo_coord": "30/07/2026",
+        "silabo_resp": "31/07/2026",
+        "informe_docente": "26/08/2026",
+        "informe_resp": "28/08/2026",
+        "periodo": "JULY 2026 - AUGUST 2026",
+    },
+    "C16NM": {
+        "tipo": "REGULAR",
+        "inicio": "29/06/2026",
+        "fin": "24/08/2026",
+        "examen": "24/08/2026",
+        "supletorio": "25/08/2026",
+        "silabo_docente": "29/06/2026",
+        "silabo_coord": "30/06/2026",
+        "silabo_resp": "01/07/2026",
+        "informe_docente": "25/08/2026",
+        "informe_resp": "27/08/2026",
+        "periodo": "JUNE 2026 - AUGUST 2026",
+    },
+    "C74E": {
+        "tipo": "ESPECIAL (VACACIONAL)",
+        "inicio": "07/09/2026",
+        "fin": "01/10/2026",
+        "examen": "01/10/2026",
+        "supletorio": "02/10/2026",
+        "silabo_docente": "07/09/2026",
+        "silabo_coord": "08/09/2026",
+        "silabo_resp": "09/09/2026",
+        "informe_docente": "02/10/2026",
+        "informe_resp": "05/10/2026",
+        "periodo": "SEPTEMBER 2026 - OCTOBER 2026",
+    },
+    "C16NME": {
+        "tipo": "ESPECIAL (VACACIONAL)",
+        "inicio": "07/09/2026",
+        "fin": "01/10/2026",
+        "examen": "01/10/2026",
+        "supletorio": "02/10/2026",
+        "silabo_docente": "07/09/2026",
+        "silabo_coord": "08/09/2026",
+        "silabo_resp": "09/09/2026",
+        "informe_docente": "02/10/2026",
+        "informe_resp": "05/10/2026",
+        "periodo": "SEPTEMBER 2026 - OCTOBER 2026",
+    },
+    "C75": {
+        "tipo": "REGULAR",
+        "inicio": "12/10/2026",
+        "fin": "14/12/2026",
+        "examen": "14/12/2026",
+        "supletorio": "15/12/2026",
+        "silabo_docente": "12/10/2026",
+        "silabo_coord": "13/10/2026",
+        "silabo_resp": "14/10/2026",
+        "informe_docente": "15/12/2026",
+        "informe_resp": "17/12/2026",
+        "periodo": "OCTOBER 2026 - DECEMBER 2026",
+    },
+    "C75I": {
+        "tipo": "INTENSIVO 1",
+        "inicio": "12/10/2026",
+        "fin": "05/11/2026",
+        "examen": "05/11/2026",
+        "supletorio": "06/11/2026",
+        "silabo_docente": "12/10/2026",
+        "silabo_coord": "13/10/2026",
+        "silabo_resp": "14/10/2026",
+        "informe_docente": "06/11/2026",
+        "informe_resp": "09/11/2026",
+        "periodo": "OCTOBER 2026 - NOVEMBER 2026",
+    },
+    "C75II": {
+        "tipo": "INTENSIVO 2",
+        "inicio": "16/11/2026",
+        "fin": "14/12/2026",
+        "examen": "14/12/2026",
+        "supletorio": "15/12/2026",
+        "silabo_docente": "16/11/2026",
+        "silabo_coord": "17/11/2026",
+        "silabo_resp": "18/11/2026",
+        "informe_docente": "15/12/2026",
+        "informe_resp": "17/12/2026",
+        "periodo": "NOVEMBER 2026 - DECEMBER 2026",
+    },
+    "C17NM": {
+        "tipo": "REGULAR FOUR CORNERS",
+        "inicio": "12/10/2026",
+        "fin": "14/12/2026",
+        "examen": "14/12/2026",
+        "supletorio": "15/12/2026",
+        "silabo_docente": "12/10/2026",
+        "silabo_coord": "13/10/2026",
+        "silabo_resp": "14/10/2026",
+        "informe_docente": "15/12/2026",
+        "informe_resp": "17/12/2026",
+        "periodo": "OCTOBER 2026 - DECEMBER 2026",
+    },
+}
 
 
-# ── Column detection patterns ──────────────────────────────────────────────
-
-def _clean_col(name: str) -> str:
-    """Strip emoji, extra spaces, normalize for matching."""
-    cleaned = re.sub(r'[^\x00-\x7F]', '', str(name)).strip().lower()
-    return cleaned
+def get_cycle(code: str):
+    """Return cycle data for a given code, or None if not found."""
+    return CYCLES.get(code.upper().strip())
 
 
-def _find_col(columns, *patterns):
-    """Find first column matching any of the given patterns (case-insensitive)."""
-    for col in columns:
-        c = _clean_col(col)
-        for p in patterns:
-            if p.lower() in c:
-                return col
+def extract_cycle_from_filename(filename: str):
+    """
+    Extract cycle code from a Moodle grades filename.
+    Examples:
+      'E406-F C14NM Grades.ods'  -> 'C14NM'
+      'E704-D C72II Grades.csv'  -> 'C72II'
+      'E406-F_C14NM_Grades.ods'  -> 'C14NM'
+    """
+    import re
+    name = filename.replace("_", " ")
+    # Match cycle codes: C + 2-3 digits + optional I/II + optional NM + optional E
+    pattern = r'\b(C\d{2,3}(?:II|I)?(?:NM)?E?)\b'
+    matches = re.findall(pattern, name, re.IGNORECASE)
+    for m in matches:
+        code = m.upper()
+        if code in CYCLES:
+            return code
     return None
 
 
-def _to_float(val) -> float:
-    if pd.isna(val):
-        return 0.0
-    s = str(val).strip()
-    if s in ('-', '', 'N/A', 'n/a'):
-        return 0.0
-    s = s.replace(',', '.')
-    try:
-        return float(s)
-    except ValueError:
-        return 0.0
+NIVEL_MAP = {
+    "1": "First",  "2": "Second", "3": "Third",  "4": "Fourth",
+    "5": "Fifth",  "6": "Sixth",  "7": "Seventh","8": "Eighth",
+}
+
+NIVEL_MAP_ES = {
+    "1": "Primero", "2": "Segundo", "3": "Tercero", "4": "Cuarto",
+    "5": "Quinto",  "6": "Sexto",   "7": "Séptimo", "8": "Octavo",
+}
+
+MODULO_WORDS = {
+    "1": "PRIMERO", "2": "SEGUNDO", "3": "TERCERO", "4": "CUARTO",
+    "5": "QUINTO",  "6": "SEXTO",   "7": "SÉPTIMO", "8": "OCTAVO",
+}
 
 
-# ── Main ingestion function ────────────────────────────────────────────────
-
-def load_grades(file_obj, filename: str) -> pd.DataFrame:
-    """
-    Load and normalize a grades file.
-    Returns a clean DataFrame regardless of input format.
-    """
-    fname = filename.lower()
-
-    # ── Read raw file ───────────────────────────────────────────────────
-    if fname.endswith('.ods'):
-        raw = pd.read_excel(file_obj, engine='odf', header=0, dtype=str)
-    elif fname.endswith('.xlsx') or fname.endswith('.xls'):
-        raw = pd.read_excel(file_obj, header=0, dtype=str)
-    else:
-        # CSV: try semicolon first (clean format), then comma (Moodle export)
-        content = file_obj.read()
-        if isinstance(content, bytes):
-            content = content.decode('latin-1')
-        if ';' in content.split('\n')[0]:
-            raw = pd.read_csv(io.StringIO(content), sep=';', dtype=str)
-        else:
-            raw = pd.read_csv(io.StringIO(content), sep=',', dtype=str)
-
-    # Drop fully empty rows
-    raw.dropna(how='all', inplace=True)
-    raw.reset_index(drop=True, inplace=True)
-
-    cols = list(raw.columns)
-
-    # ── Detect name columns ──────────────────────────────────────────────
-    col_first = _find_col(cols, 'first name', 'firstname', 'nombre')
-    col_last  = _find_col(cols, 'last name',  'lastname',  'apellido')
-    col_full  = _find_col(cols, 'full name',  'fullname')
-    col_id    = _find_col(cols, 'id number',  'idnumber',  'cedula',
-                          'id_number', 'documento', 'número de cédula')
-
-    # ── Detect grade columns ─────────────────────────────────────────────
-    col_a = _find_col(cols, 'learning outcome a', 'resultado de aprendizaje a',
-                      'logro a', 'outcome a')
-    col_b = _find_col(cols, 'learning outcome b', 'resultado de aprendizaje b',
-                      'logro b', 'outcome b')
-    col_c = _find_col(cols, 'learning outcome c', 'resultado de aprendizaje c',
-                      'logro c', 'outcome c')
-    col_d = _find_col(cols, 'learning outcome d', 'resultado de aprendizaje d',
-                      'logro d', 'outcome d')
-    col_ex  = _find_col(cols, 'examen', 'exam', '📝 examen', 'integrative')
-    col_sup = _find_col(cols, 'supletorio', 'make-up', 'recuperacion',
-                        'recuperación', 'integrative outcome')
-
-    # ── Build normalized DataFrame ───────────────────────────────────────
-    df = pd.DataFrame()
-
-    if col_first and col_last:
-        df['LastName']  = raw[col_last].fillna('').str.strip().str.upper()
-        df['FirstName'] = raw[col_first].fillna('').str.strip().str.upper()
-        df['FullName']  = (df['LastName'] + ' ' + df['FirstName']).str.strip()
-    elif col_full:
-        df['FullName']  = raw[col_full].fillna('').str.strip().str.upper()
-        df['LastName']  = df['FullName']
-        df['FirstName'] = ''
-    else:
-        raise ValueError("Could not detect name columns in the uploaded file.")
-
-    df['IDNumber']  = raw[col_id].fillna('S/N').str.strip() if col_id else 'S/N'
-
-    df['LO_A']      = raw[col_a].apply(_to_float)  if col_a  else 0.0
-    df['LO_B']      = raw[col_b].apply(_to_float)  if col_b  else 0.0
-    df['LO_C']      = raw[col_c].apply(_to_float)  if col_c  else 0.0
-    df['LO_D']      = raw[col_d].apply(_to_float)  if col_d  else 0.0
-    df['Examen']    = raw[col_ex].apply(_to_float)  if col_ex  else 0.0
-    df['Supletorio']= raw[col_sup].apply(_to_float) if col_sup else 0.0
-
-    # Drop rows with no name
-    df = df[df['FullName'].str.len() > 2].copy()
-    df.sort_values('FullName', inplace=True, ignore_index=True)
-
-    return df
+def extract_level_from_filename(filename: str):
+    """Extract level digit from filename. E.g. 'E406-F' -> '4', 'E704-D' -> '7'"""
+    import re
+    m = re.search(r'E(\d)', filename, re.IGNORECASE)
+    if m:
+        return m.group(1)
+    return None
 
 
-# ── Grade calculations ─────────────────────────────────────────────────────
-
-def compute_grades(df: pd.DataFrame) -> pd.DataFrame:
-    """Add all calculated grade columns to the DataFrame."""
-    df = df.copy()
-
-    df['EQ_A']      = (df['LO_A'] * 0.15).round(2)
-    df['EQ_B']      = (df['LO_B'] * 0.15).round(2)
-    df['EQ_C']      = (df['LO_C'] * 0.20).round(2)
-    df['EQ_D']      = (df['LO_D'] * 0.20).round(2)
-    df['PROM_AC']   = ((df['LO_A'] + df['LO_C']) / 2).round(2)
-    df['EQ_PROM_AC']= (df['PROM_AC'] * 0.30).round(2)
-    df['SUBTOTAL']  = (df['EQ_A'] + df['EQ_B'] + df['EQ_C'] + df['EQ_D']).round(2)
-    df['EQ_EX']     = (df['Examen'] * 0.30).round(2)
-    df['SUB_EX']    = (df['SUBTOTAL'] + df['EQ_EX']).round(2)
-    df['EQ_SUP']    = (df['Supletorio'] * 0.30).round(2)
-    df['FINAL']     = df.apply(
-        lambda r: round(r['SUBTOTAL'] + r['EQ_SUP'], 2)
-        if r['Supletorio'] > 0 else r['SUB_EX'], axis=1
-    )
-
-    def status(r):
-        total = r['LO_A'] + r['LO_B'] + r['LO_C'] + r['LO_D']
-        if total == 0.0:
-            return 'RETIRADO'
-        return 'APROBADO' if r['FINAL'] >= 7.0 else 'REPROBADO'
-
-    df['ESTADO'] = df.apply(status, axis=1)
-    return df
-
-
-def compute_grades_mensual(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute grades using only LO_A and LO_B (monthly/partial report)."""
-    df = df.copy()
-    df['LO_C'] = 0.0
-    df['LO_D'] = 0.0
-    df['Examen'] = 0.0
-    df['Supletorio'] = 0.0
-
-    df['EQ_A']       = (df['LO_A'] * 0.15).round(2)
-    df['EQ_B']       = (df['LO_B'] * 0.15).round(2)
-    df['EQ_C']       = 0.0
-    df['EQ_D']       = 0.0
-    df['PROM_AC']    = 0.0
-    df['EQ_PROM_AC'] = 0.0
-    df['SUBTOTAL']   = (df['EQ_A'] + df['EQ_B']).round(2)
-    df['EQ_EX']      = 0.0
-    df['SUB_EX']     = df['SUBTOTAL']
-    df['EQ_SUP']     = 0.0
-    df['FINAL']      = df['SUBTOTAL']
-
-    def status(r):
-        if r['LO_A'] == 0.0 and r['LO_B'] == 0.0:
-            return 'RETIRADO'
-        return 'APROBADO' if r['FINAL'] >= 7.0 else 'REPROBADO'
-
-    df['ESTADO'] = df.apply(status, axis=1)
-    return df
-
-
-def get_flagged_students(df: pd.DataFrame):
-    """
-    Returns two lists of (FullName, IDNumber) tuples:
-      - academic: LO_A or LO_B below 7.0 (and not zero/withdrawn)
-      - attendance: LO_A == 0 or LO_B == 0
-    Based only on Logro A & B per Informe Docente rules.
-    """
-    academic = []
-    attendance = []
-
-    for _, row in df.iterrows():
-        a, b = row['LO_A'], row['LO_B']
-        name = row['FullName']
-        id_  = row['IDNumber']
-
-        if a == 0.0 or b == 0.0:
-            attendance.append((name, id_))
-        elif a < 7.0 or b < 7.0:
-            academic.append((name, id_))
-
-    return academic, attendance
+def extract_classroom_from_filename(filename: str):
+    """Extract classroom letter. E.g. 'E704-D' -> 'D', 'E406-F' -> 'F'"""
+    import re
+    m = re.search(r'E\d{3}-([A-Z])', filename, re.IGNORECASE)
+    if m:
+        return m.group(1).upper()
+    return "N/A"
