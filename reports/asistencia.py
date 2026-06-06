@@ -79,19 +79,6 @@ TEMPLATE = r"""\documentclass[11pt]{article}
 %%STUDENT_ROWS%%
 \end{longtable}
 \end{center}
-\Needspace{4cm}
-\vspace{6mm}
-\begin{center}
-    \begin{tabular}{@{} m{120mm} >{\centering\arraybackslash}m{80mm} @{}}
-        {\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} \hspace{2mm}
-        {\fontsize{9}{9}\selectfont %%EXAMEN_FINAL%%} & \\
-        \rule{0pt}{6mm}
-        \hspace{1.58mm}
-        {\fontsize{9}{9}\selectfont\bfseries SUPLETORIO:} \hspace{1mm}
-        {\fontsize{9}{9}\selectfont %%SUPLETORIO%%} &
-        {\fontsize{9}{9}\selectfont DOCENTE} \\
-    \end{tabular}
-\end{center}
 \end{document}"""
 
 
@@ -207,6 +194,20 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
         "\\endhead\n"
     )
 
+    # Footer row inside longtable
+    footer_row = (
+        r"\noalign{\vspace{1.5cm}}" + "\n"
+        r"\multicolumn{21}{@{}l@{}}{"
+        r"{\fontsize{9}{9}\selectfont\bfseries EXAMEN FINAL:} \hspace{2mm}"
+        r"{\fontsize{9}{9}\selectfont %%EXAMEN_FINAL%%}"
+        r"\hspace{20mm}"
+        r"{\fontsize{9}{9}\selectfont\bfseries SUPLETORIO:} \hspace{1mm}"
+        r"{\fontsize{9}{9}\selectfont %%SUPLETORIO%%}"
+        r"\hfill"
+        r"{\fontsize{9}{9}\selectfont DOCENTE}"
+        r"} \\" + "\n"
+    )
+
     clean_code = course_code.replace('_', '-').replace(' ', '-')
     tex = (TEMPLATE
            .replace("%%COURSE_CODE%%", tex_s(clean_code))
@@ -214,7 +215,7 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
            .replace("%%DOCENTE%%",     FACILITADOR)
            .replace("%%EXAMEN_FINAL%%", tex_s(fecha_examen))
            .replace("%%SUPLETORIO%%",   tex_s(fecha_sup))
-           .replace("%%STUDENT_ROWS%%", lt_header + "".join(rows_latex))
+           .replace("%%STUDENT_ROWS%%", lt_header + "".join(rows_latex) + footer_row)
            .replace("%%HEIGHT%%",       "5mm")
            .replace("%%OFFSET%%",       "1.5mm"))
 
