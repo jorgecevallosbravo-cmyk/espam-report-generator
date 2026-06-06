@@ -131,6 +131,7 @@ for c in courses:
     code  = c["cycle_code"] or "Unknown"
     cdata = c["cycle_data"] or {}
     fname = c["filename"]
+    fkey  = fname.replace(" ", "_").replace(".", "_")  # safe unique key
 
     with st.expander(f"**{code}** — {fname}", expanded=True):
 
@@ -144,7 +145,7 @@ for c in courses:
         horario = st.text_input(
             "Horario",
             placeholder="e.g. 07h00 - 09h00",
-            key=f"horario_{code}",
+            key=f"horario_{fkey}",
         )
 
         st.divider()
@@ -164,7 +165,7 @@ for c in courses:
                 strat = st.text_input(
                     f"↳ {name}",
                     placeholder="Strategy...",
-                    key=f"acad_{code}_{name}",
+                    key=f"acad_{fkey}_{name}",
                 )
                 acad_strategies[name] = strat
         else:
@@ -178,7 +179,7 @@ for c in courses:
                 strat = st.text_input(
                     f"↳ {name}",
                     placeholder="Strategy...",
-                    key=f"att_{code}_{name}",
+                    key=f"att_{fkey}_{name}",
                 )
                 att_strategies[name] = strat
         else:
@@ -189,25 +190,25 @@ for c in courses:
             "Anexo: Moodle",
             options=["Todos los estudiantes fueron matriculados sin problema",
                      "Algunos estudiantes tuvieron inconvenientes"],
-            key=f"moodle_{code}",
+            key=f"moodle_{fkey}",
         )
         moodle_all   = (moodle_ok.startswith("Todos"))
         moodle_names = ""
         if not moodle_all:
             moodle_names = st.text_input(
                 "Names of students with enrollment issues",
-                key=f"moodle_names_{code}",
+                key=f"moodle_names_{fkey}",
             )
 
         moodle_screenshot = st.file_uploader(
             "Moodle screenshot *(optional)*",
             type=["png", "jpg", "jpeg"],
-            key=f"moodle_img_{code}",
+            key=f"moodle_img_{fkey}",
         )
         moodle_img_data = (moodle_screenshot.name, moodle_screenshot.read()) \
             if moodle_screenshot else None
 
-        course_inputs[code] = {
+        course_inputs[fname] = {
             "horario":          horario,
             "df_mensual":       df_mensual,
             "acad_strategies":  acad_strategies,
@@ -228,7 +229,7 @@ jornada   = col2.selectbox("Jornada",   ["MAÑANA", "TARDE"],       key="jornada
 
 col3, col4 = st.columns(2)
 dias_semana    = col3.text_input("Días de la semana",
-                                  value="Viernes",
+                                  value="Lunes, Miércoles, Viernes",
                                   key="dias")
 horas_semana   = col4.number_input("Horas semanales", min_value=1,
                                     max_value=10, value=3, key="horas")
@@ -260,8 +261,9 @@ st.markdown("---")
 missing = []
 for c in courses:
     code = c["cycle_code"] or "Unknown"
-    if not course_inputs.get(code, {}).get("horario", "").strip():
-        missing.append(f"Horario for {code}")
+    fname = c["filename"]
+    if not course_inputs.get(fname, {}).get("horario", "").strip():
+        missing.append(f"Horario for {fname}")
 
 if not semana_images:
     missing.append("At least one Semana photo for Reporte de Tutorías")
@@ -305,20 +307,20 @@ for c in courses:
     fname = c["filename"]
     level = c["level_digit"] or "1"
     cls   = c["classroom"]
-    inp   = course_inputs[code]
+    inp   = course_inputs[fname]
     df_raw     = c["df_raw"]
     df_final   = compute_grades(df_raw)
     df_mensual = inp["df_mensual"]
     horario    = inp["horario"]
 
-    outputs[code] = {}
+    outputs[fname] = {}
 
     # 1. Asistencia Final
     step += 1
     progress.progress(step / total_steps,
                       text=f"{code}: Asistencia Final...")
     try:
-        outputs[code]["Asistencia_Final.pdf"] = generate_asistencia(
+        outputs[fname]["Asistencia_Final.pdf"] = generate_asistencia(
             df_raw, cdata, horario, code, is_mensual=False)
     except Exception as e:
         st.error(f"{code} Asistencia Final failed: {e}")
@@ -328,7 +330,7 @@ for c in courses:
     progress.progress(step / total_steps,
                       text=f"{code}: Asistencia Mensual...")
     try:
-        outputs[code]["Asistencia_Mensual.pdf"] = generate_asistencia(
+        outputs[fname]["Asistencia_Mensual.pdf"] = generate_asistencia(
             df_raw, cdata, horario, code, is_mensual=True)
     except Exception as e:
         st.error(f"{code} Asistencia Mensual failed: {e}")
@@ -337,7 +339,7 @@ for c in courses:
     step += 1
     progress.progress(step / total_steps, text=f"{code}: Notas Final...")
     try:
-        outputs[code]["Notas_Final.pdf"] = generate_notas(
+        outputs[fname]["Notas_Final.pdf"] = generate_notas(
             df_final, cdata, code, level, is_mensual=False)
     except Exception as e:
         st.error(f"{code} Notas Final failed: {e}")
@@ -346,7 +348,7 @@ for c in courses:
     step += 1
     progress.progress(step / total_steps, text=f"{code}: Notas Mensual...")
     try:
-        outputs[code]["Notas_Mensual.pdf"] = generate_notas(
+        outputs[fname]["Notas_Mensual.pdf"] = generate_notas(
             df_mensual, cdata, code, level, is_mensual=True)
     except Exception as e:
         st.error(f"{code} Notas Mensual failed: {e}")
@@ -356,7 +358,7 @@ for c in courses:
     progress.progress(step / total_steps,
                       text=f"{code}: Informe Docente...")
     try:
-        outputs[code]["Informe_Docente.pdf"] = generate_informe_docente(
+        outputs[fname]["Informe_Docente.pdf"] = generate_informe_docente(
             df_mensual, cdata, code, level, cls,
             inp["acad_strategies"], inp["att_strategies"],
             inp["moodle_all"], inp["moodle_names"],
@@ -370,7 +372,7 @@ for c in courses:
     progress.progress(step / total_steps,
                       text=f"{code}: Informe Final del Curso...")
     try:
-        outputs[code]["Informe_Final_del_Curso.pdf"] = generate_informe_final(
+        outputs[fname]["Informe_Final_del_Curso.pdf"] = generate_informe_final(
             df_final, cdata, code, level, cls)
     except Exception as e:
         st.error(f"{code} Informe Final failed: {e}")
@@ -444,7 +446,7 @@ for c in courses:
     code  = c["cycle_code"]
     cdata = c["cycle_data"]
     fname = c["filename"]
-    reps  = outputs.get(code, {})
+    reps  = outputs.get(fname, {})
     if not reps:
         continue
 
