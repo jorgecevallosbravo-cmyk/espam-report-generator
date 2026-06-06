@@ -76,10 +76,13 @@ def write_logo(directory: str) -> str:
     return 'logo.png'
 
 
-def compile_latex(tex_content: str, job_name: str = 'output') -> bytes:
+def compile_latex(tex_content: str, job_name: str = 'output', extra_files: dict = {}) -> bytes:
     """Compile LaTeX string with pdflatex. Returns PDF bytes."""
     with tempfile.TemporaryDirectory() as tmpdir:
         write_logo(tmpdir)
+        for fname, fbytes in extra_files.items():
+            with open(os.path.join(tmpdir, fname), 'wb') as f:
+                f.write(fbytes)
         tex_path = os.path.join(tmpdir, f'{job_name}.tex')
         pdf_path = os.path.join(tmpdir, f'{job_name}.pdf')
 
