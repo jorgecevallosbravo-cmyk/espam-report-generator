@@ -396,32 +396,85 @@ except Exception as e:
 
 progress.progress(1.0, text="Done!")
 
+# ── Naming helpers ───────────────────────────────────────────────────────────
+import re as _re
+from datetime import datetime as _dt
+
+_MONTH_CODES = {
+    1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",
+    7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"
+}
+
+def _month_code(date_str):
+    return _MONTH_CODES[_dt.strptime(date_str, "%d/%m/%Y").month]
+
+def _months_range(start_str, end_str):
+    s = _dt.strptime(start_str, "%d/%m/%Y")
+    e = _dt.strptime(end_str,   "%d/%m/%Y")
+    months, y, m = [], s.year, s.month
+    while (y, m) <= (e.year, e.month):
+        months.append(_MONTH_CODES[m])
+        m += 1
+        if m > 12:
+            m, y = 1, y + 1
+    return "-".join(months)
+
+def _make_prefix(filename, cycle_code):
+    mx = _re.search(r'(E\d{3})', filename, _re.IGNORECASE)
+    section  = mx.group(1).upper() if mx else "E000"
+    last_dig = int(section[-1])
+    parallel = chr(ord('A') + last_dig - 1)
+    return f"{section}{cycle_code}-{parallel}", section, parallel
+
 # ── Build ZIPs ────────────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("📥 Download reports")
 
-for code, reports in outputs.items():
-    if not reports:
+for c in courses:
+    code  = c["cycle_code"]
+    cdata = c["cycle_data"]
+    fname = c["filename"]
+    reps  = outputs.get(code, {})
+    if not reps:
         continue
+
+    prefix, section, parallel = _make_prefix(fname, code)
+    inicio = cdata["inicio"] if cdata else "01/01/2026"
+    fin    = cdata["fin"]    if cdata else "31/12/2026"
+
+    m_inicio = _month_code(inicio)
+    m_fin    = _month_code(fin)
+    m_range  = _months_range(inicio, fin)
+
+    # Correct filenames
+    name_map = {
+        "Asistencia_Mensual.pdf":      f"{prefix}-ASI_{m_inicio}.pdf",
+        "Asistencia_Final.pdf":        f"{prefix}-ASI_{m_fin}.pdf",
+        "Notas_Mensual.pdf":           f"{prefix}-CAL_{m_inicio}.pdf",
+        "Notas_Final.pdf":             f"{prefix}-CAL_{m_fin}.pdf",
+        "Informe_Final_del_Curso.pdf": f"{prefix}_IF.pdf",
+        "Informe_Docente.pdf":         f"INFORME DOCENTE {section}{parallel}_{code}.pdf",
+        "Tutorias.pdf":                f"{prefix}-TA_{m_range}.pdf",
+    }
+
+    folder = prefix
+    zip_name = f"ZIP_{prefix}.zip"
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for rname, rbytes in reports.items():
-            zf.writestr(rname, rbytes)
+        for generic_name, pdf_bytes in reps.items():
+            final_name = name_map.get(generic_name, generic_name)
+            zf.writestr(f"{folder}/{final_name}", pdf_bytes)
+        # Add tutorías copy for this course
+        if tutorias_pdf:
+            ta_name = name_map["Tutorias.pdf"]
+            zf.writestr(f"{folder}/{ta_name}", tutorias_pdf)
+
     zip_buf.seek(0)
     st.download_button(
-        label=f"⬇️  ZIP_{code}.zip  ({len(reports)} reports)",
+        label=f"⬇️  {zip_name}  (7 reports)",
         data=zip_buf.getvalue(),
-        file_name=f"ZIP_{code}.zip",
+        file_name=zip_name,
         mime="application/zip",
-        use_container_width=True,
-    )
-
-if tutorias_pdf:
-    st.download_button(
-        label="⬇️  Reporte_de_Tutorias.pdf",
-        data=tutorias_pdf,
-        file_name="Reporte_de_Tutorias.pdf",
-        mime="application/pdf",
         use_container_width=True,
     )
 
