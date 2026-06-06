@@ -292,128 +292,116 @@ from reports.informe_final   import generate_informe_final
 from reports.tutorias        import generate_tutorias
 
 if generate:
-    from reports.asistencia      import generate_asistencia
-    from reports.notas           import generate_notas
-    from reports.informe_docente import generate_informe_docente
-    from reports.informe_final   import generate_informe_final
-    from reports.tutorias        import generate_tutorias
-
     progress = st.progress(0, text="Starting...")
     outputs  = {}
-
     total_steps = len(courses) * 6 + 1
     step = 0
 
-# ── Per-course reports ────────────────────────────────────────────────────────
-for c in courses:
-    code  = c["cycle_code"]
-    cdata = c["cycle_data"]
-    fname = c["filename"]
-    level = c["level_digit"] or "1"
-    cls   = c["classroom"]
-    inp   = course_inputs[fname]
-    df_raw     = c["df_raw"]
-    df_final   = compute_grades(df_raw)
-    df_mensual = inp["df_mensual"]
-    horario    = inp["horario"]
+    # ── Per-course reports ────────────────────────────────────────────────────
+    for c in courses:
+        code  = c["cycle_code"]
+        cdata = c["cycle_data"]
+        fname = c["filename"]
+        level = c["level_digit"] or "1"
+        cls   = c["classroom"]
+        inp   = course_inputs[fname]
+        df_raw     = c["df_raw"]
+        df_final   = compute_grades(df_raw)
+        df_mensual = inp["df_mensual"]
+        horario    = inp["horario"]
 
-    outputs[fname] = {}
+        outputs[fname] = {}
 
-    # 1. Asistencia Final
+        # 1. Asistencia Final
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Asistencia Final...")
+        try:
+            outputs[fname]["Asistencia_Final.pdf"] = generate_asistencia(
+                df_raw, cdata, horario, code, is_mensual=False)
+        except Exception as e:
+            st.error(f"{code} Asistencia Final failed: {e}")
+
+        # 2. Asistencia Mensual
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Asistencia Mensual...")
+        try:
+            outputs[fname]["Asistencia_Mensual.pdf"] = generate_asistencia(
+                df_raw, cdata, horario, code, is_mensual=True)
+        except Exception as e:
+            st.error(f"{code} Asistencia Mensual failed: {e}")
+
+        # 3. Notas Final
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Notas Final...")
+        try:
+            outputs[fname]["Notas_Final.pdf"] = generate_notas(
+                df_final, cdata, code, level, is_mensual=False)
+        except Exception as e:
+            st.error(f"{code} Notas Final failed: {e}")
+
+        # 4. Notas Mensual
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Notas Mensual...")
+        try:
+            outputs[fname]["Notas_Mensual.pdf"] = generate_notas(
+                df_mensual, cdata, code, level, is_mensual=True)
+        except Exception as e:
+            st.error(f"{code} Notas Mensual failed: {e}")
+
+        # 5. Informe Docente
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Informe Docente...")
+        try:
+            outputs[fname]["Informe_Docente.pdf"] = generate_informe_docente(
+                df_mensual, cdata, code, level, cls,
+                inp["acad_strategies"], inp["att_strategies"],
+                inp["moodle_all"], inp["moodle_names"],
+                inp.get("moodle_img"),
+            )
+        except Exception as e:
+            st.error(f"{code} Informe Docente failed: {e}")
+
+        # 6. Informe Final del Curso
+        step += 1
+        progress.progress(step / total_steps, text=f"{code}: Informe Final del Curso...")
+        try:
+            outputs[fname]["Informe_Final_del_Curso.pdf"] = generate_informe_final(
+                df_final, cdata, code, level, cls)
+        except Exception as e:
+            st.error(f"{code} Informe Final failed: {e}")
+
+    # ── Reporte de Tutorías ───────────────────────────────────────────────────
     step += 1
-    progress.progress(step / total_steps,
-                      text=f"{code}: Asistencia Final...")
-    try:
-        outputs[fname]["Asistencia_Final.pdf"] = generate_asistencia(
-            df_raw, cdata, horario, code, is_mensual=False)
-    except Exception as e:
-        st.error(f"{code} Asistencia Final failed: {e}")
+    progress.progress(step / total_steps, text="Reporte de Tutorías...")
 
-    # 2. Asistencia Mensual
-    step += 1
-    progress.progress(step / total_steps,
-                      text=f"{code}: Asistencia Mensual...")
-    try:
-        outputs[fname]["Asistencia_Mensual.pdf"] = generate_asistencia(
-            df_raw, cdata, horario, code, is_mensual=True)
-    except Exception as e:
-        st.error(f"{code} Asistencia Mensual failed: {e}")
+    all_starts = [c["cycle_data"]["inicio"] for c in courses if c["cycle_data"]]
+    all_ends   = [c["cycle_data"]["fin"]    for c in courses if c["cycle_data"]]
 
-    # 3. Notas Final
-    step += 1
-    progress.progress(step / total_steps, text=f"{code}: Notas Final...")
-    try:
-        outputs[fname]["Notas_Final.pdf"] = generate_notas(
-            df_final, cdata, code, level, is_mensual=False)
-    except Exception as e:
-        st.error(f"{code} Notas Final failed: {e}")
+    from datetime import datetime as dt
+    def _parse(s): return dt.strptime(s, "%d/%m/%Y")
 
-    # 4. Notas Mensual
-    step += 1
-    progress.progress(step / total_steps, text=f"{code}: Notas Mensual...")
-    try:
-        outputs[fname]["Notas_Mensual.pdf"] = generate_notas(
-            df_mensual, cdata, code, level, is_mensual=True)
-    except Exception as e:
-        st.error(f"{code} Notas Mensual failed: {e}")
+    cycle_start = min(all_starts, key=_parse) if all_starts else "01/01/2026"
+    cycle_end   = max(all_ends,   key=_parse) if all_ends   else "31/12/2026"
 
-    # 5. Informe Docente
-    step += 1
-    progress.progress(step / total_steps,
-                      text=f"{code}: Informe Docente...")
+    all_dfs_meta = [
+        (compute_grades_mensual(c["df_raw"]), c["cycle_code"], c["level_digit"] or "1")
+        for c in courses if c["cycle_code"]
+    ]
+
     try:
-        outputs[fname]["Informe_Docente.pdf"] = generate_informe_docente(
-            df_mensual, cdata, code, level, cls,
-            inp["acad_strategies"], inp["att_strategies"],
-            inp["moodle_all"], inp["moodle_names"],
-            inp.get("moodle_img"),
+        tutorias_pdf = generate_tutorias(
+            all_dfs_meta, cycle_start, cycle_end,
+            modalidad, jornada, dias_semana,
+            int(horas_semana), observaciones, semana_images,
         )
     except Exception as e:
-        st.error(f"{code} Informe Docente failed: {e}")
-
-    # 6. Informe Final del Curso
-    step += 1
-    progress.progress(step / total_steps,
-                      text=f"{code}: Informe Final del Curso...")
-    try:
-        outputs[fname]["Informe_Final_del_Curso.pdf"] = generate_informe_final(
-            df_final, cdata, code, level, cls)
-    except Exception as e:
-        st.error(f"{code} Informe Final failed: {e}")
-
-# ── Reporte de Tutorías ───────────────────────────────────────────────────────
-step += 1
-progress.progress(step / total_steps, text="Reporte de Tutorías...")
-
-# Determine date range across all courses
-all_starts = [c["cycle_data"]["inicio"] for c in courses if c["cycle_data"]]
-all_ends   = [c["cycle_data"]["fin"]    for c in courses if c["cycle_data"]]
-
-from datetime import datetime as dt
-def _parse(s): return dt.strptime(s, "%d/%m/%Y")
-
-cycle_start = min(all_starts, key=_parse) if all_starts else "01/01/2026"
-cycle_end   = max(all_ends,   key=_parse) if all_ends   else "31/12/2026"
-
-all_dfs_meta = [
-    (compute_grades_mensual(c["df_raw"]), c["cycle_code"], c["level_digit"] or "1")
-    for c in courses if c["cycle_code"]
-]
-
-try:
-    tutorias_pdf = generate_tutorias(
-        all_dfs_meta, cycle_start, cycle_end,
-        modalidad, jornada, dias_semana,
-        int(horas_semana), observaciones, semana_images,
-    )
-except Exception as e:
-    tutorias_pdf = None
-    st.error(f"Reporte de Tutorías failed: {e}")
+        tutorias_pdf = None
+        st.error(f"Reporte de Tutorías failed: {e}")
 
     progress.progress(1.0, text="Done!")
-    st.session_state["zip_outputs"]   = outputs
-    st.session_state["tutorias_pdf"]  = tutorias_pdf
-    st.session_state["zip_courses"]   = courses
+    st.session_state["zip_outputs"]  = outputs
+    st.session_state["tutorias_pdf"] = tutorias_pdf
+    st.session_state["zip_courses"]  = courses
 
 # ── Naming helpers ───────────────────────────────────────────────────────────
 import re as _re
