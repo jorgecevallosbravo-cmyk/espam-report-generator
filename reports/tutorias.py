@@ -7,6 +7,8 @@ import base64
 import random
 from datetime import datetime, timedelta
 from weasyprint import HTML
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils import (LOGO_DATA_URI, FACILITADOR_SHORT, COORDINADOR,
                    esc_html, TOPIC_DATABASE, MODULO_WORDS)
 from cycles import NIVEL_MAP_ES
