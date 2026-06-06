@@ -32,6 +32,7 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt;
 table { width: 100%; border-collapse: collapse; }
 th, td { border: 1pt solid #000; padding: 3pt 4pt; text-align: left;
          font-size: 8.5pt; }
+tr { page-break-inside: avoid; }
 .header-table td:first-child { border-right: none; padding: 6pt; }
 .header-table td:last-child  { border-left: none; width: 28%;
                                 text-align: center; }
