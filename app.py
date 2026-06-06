@@ -228,7 +228,7 @@ jornada   = col2.selectbox("Jornada",   ["MAÑANA", "TARDE"],       key="jornada
 
 col3, col4 = st.columns(2)
 dias_semana    = col3.text_input("Días de la semana",
-                                  value="Lunes, Miércoles, Viernes",
+                                  value="Viernes",
                                   key="dias")
 horas_semana   = col4.number_input("Horas semanales", min_value=1,
                                     max_value=10, value=3, key="horas")
