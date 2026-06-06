@@ -193,8 +193,8 @@ def generate_tutorias(
 
 <table class="sig-table">
 <tr>
-  <td><span class="sig-line">{FACILITADOR_SHORT}<br><br><b>DOCENTE TUTOR</b></span></td>
-  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
+  <td><span class="sig-line">{FACILITADOR_SHORT}<br><b>DOCENTE TUTOR</b></span></td>
+  <td><span class="sig-line">{esc_html(COORDINADOR)}<br><b>COORDINADOR ACAD&Eacute;MICO</b></span></td>
 </tr>
 </table>
 
