@@ -1,38 +1,94 @@
 """Shared utilities for all report generators."""
- 
+
+import os
+import base64
+import subprocess
+import tempfile
 from logo_b64 import LOGO_B64
- 
-LOGO_DATA_URI = f"data:image/png;base64,{LOGO_B64}"
- 
-FACILITADOR     = "JORGE BIENVENIDO CEVALLOS BRAVO"
+
+FACILITADOR       = "JORGE BIENVENIDO CEVALLOS BRAVO"
 FACILITADOR_SHORT = "Jorge Cevallos Bravo"
-COORDINADOR     = "Lic. Carlos Enrique Alcívar Zambrano, Mg."
-UCI_RESPONSIBLE = "Ing. José Rafael Vera Vera, Mg."
- 
+COORDINADOR       = "Lic. Carlos Enrique Alcívar Zambrano, Mg."
+UCI_RESPONSIBLE   = "Ing. José Rafael Vera Vera, Mg."
+
 MODULO_WORDS = {
     "1": "PRIMERO", "2": "SEGUNDO", "3": "TERCERO", "4": "CUARTO",
     "5": "QUINTO",  "6": "SEXTO",   "7": "SÉPTIMO", "8": "OCTAVO",
 }
- 
-TEAL   = "#00A99D"
-WHITE  = "#FFFFFF"
- 
- 
+
+TEAL  = "#00A99D"
+WHITE = "#FFFFFF"
+
+
 def fmt(v) -> str:
-    """Format float as XX,XX (Spanish decimal comma)."""
     return f"{float(v):.2f}".replace('.', ',')
- 
- 
+
+
 def esc_html(text: str) -> str:
-    """Escape HTML special characters."""
     return (str(text)
             .replace('&', '&amp;')
             .replace('<', '&lt;')
             .replace('>', '&gt;'))
- 
- 
-# ── Topic database (for Reporte de Tutorías) ──────────────────────────────
- 
+
+
+def tex_s(text) -> str:
+    """Escape special LaTeX characters."""
+    if not isinstance(text, str):
+        text = str(text)
+    conv = {
+        '\\': r'\textbackslash{}',
+        '&':  r'\&',
+        '%':  r'\%',
+        '$':  r'\$',
+        '#':  r'\#',
+        '_':  r'\_',
+        '{':  r'\{',
+        '}':  r'\}',
+    }
+    return "".join(conv.get(c, c) for c in text)
+
+
+def write_logo(directory: str) -> str:
+    """Write the white-background logo PNG to directory. Returns filename 'logo.png'."""
+    logo_path = os.path.join(directory, 'logo.png')
+    with open(logo_path, 'wb') as f:
+        f.write(base64.b64decode(LOGO_B64))
+    return 'logo.png'
+
+
+def compile_latex(tex_content: str, job_name: str = 'output') -> bytes:
+    """
+    Compile LaTeX string with pdflatex.
+    Returns PDF bytes, or raises RuntimeError on failure.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        write_logo(tmpdir)
+        tex_path = os.path.join(tmpdir, f'{job_name}.tex')
+        pdf_path = os.path.join(tmpdir, f'{job_name}.pdf')
+
+        with open(tex_path, 'w', encoding='utf-8') as f:
+            f.write(tex_content)
+
+        for _ in range(2):
+            r = subprocess.run(
+                ['pdflatex', '-interaction=batchmode',
+                 '-halt-on-error', f'{job_name}.tex'],
+                cwd=tmpdir,
+                capture_output=True,
+                text=True,
+            )
+
+        if os.path.exists(pdf_path):
+            with open(pdf_path, 'rb') as f:
+                return f.read()
+        else:
+            log_path = os.path.join(tmpdir, f'{job_name}.log')
+            log = open(log_path).read()[-3000:] if os.path.exists(log_path) else 'No log'
+            raise RuntimeError(f'pdflatex failed:\n{log}')
+
+
+# ── Topic database (Reporte de Tutorías) ──────────────────────────────────
+
 TOPIC_DATABASE = {
     "1": [
         "Possessive adjectives; the verb be; affirmative statements: Introducing yourself and friends",
