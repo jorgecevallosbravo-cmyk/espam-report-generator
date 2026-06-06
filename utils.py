@@ -9,6 +9,11 @@ FACILITADOR_SHORT = "Jorge Cevallos Bravo"
 COORDINADOR     = "Lic. Carlos Enrique Alcívar Zambrano, Mg."
 UCI_RESPONSIBLE = "Ing. José Rafael Vera Vera, Mg."
 
+MODULO_WORDS = {
+    "1": "PRIMERO", "2": "SEGUNDO", "3": "TERCERO", "4": "CUARTO",
+    "5": "QUINTO",  "6": "SEXTO",   "7": "SÉPTIMO", "8": "OCTAVO",
+}
+
 TEAL   = "#00A99D"
 WHITE  = "#FFFFFF"
 
