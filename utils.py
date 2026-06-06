@@ -4,9 +4,19 @@ import os
 import base64
 import subprocess
 import tempfile
-from logo_b64 import LOGO_B64
+import shutil
 
-FACILITADOR       = "JORGE BIENVENIDO CEVALLOS BRAVO"
+# Logo path — stored as logo.png in the repo root
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOGO_PATH = os.path.join(_ROOT, 'logo.png')
+
+# For WeasyPrint (tutorias) — read logo as base64 data URI
+def _get_logo_data_uri():
+    with open(LOGO_PATH, 'rb') as f:
+        data = base64.b64encode(f.read()).decode()
+    return f"data:image/png;base64,{data}"
+
+FACILITADOR       = "JORGE CEVALLOS BRAVO"
 FACILITADOR_SHORT = "Jorge Cevallos Bravo"
 COORDINADOR       = "Lic. Carlos Enrique Alcívar Zambrano, Mg."
 UCI_RESPONSIBLE   = "Ing. José Rafael Vera Vera, Mg."
@@ -49,18 +59,14 @@ def tex_s(text) -> str:
 
 
 def write_logo(directory: str) -> str:
-    """Write the white-background logo PNG to directory. Returns filename 'logo.png'."""
-    logo_path = os.path.join(directory, 'logo.png')
-    with open(logo_path, 'wb') as f:
-        f.write(base64.b64decode(LOGO_B64))
+    """Copy logo.png to the given temp directory. Returns 'logo.png'."""
+    dest = os.path.join(directory, 'logo.png')
+    shutil.copy2(LOGO_PATH, dest)
     return 'logo.png'
 
 
 def compile_latex(tex_content: str, job_name: str = 'output') -> bytes:
-    """
-    Compile LaTeX string with pdflatex.
-    Returns PDF bytes, or raises RuntimeError on failure.
-    """
+    """Compile LaTeX string with pdflatex. Returns PDF bytes."""
     with tempfile.TemporaryDirectory() as tmpdir:
         write_logo(tmpdir)
         tex_path = os.path.join(tmpdir, f'{job_name}.tex')
@@ -70,7 +76,7 @@ def compile_latex(tex_content: str, job_name: str = 'output') -> bytes:
             f.write(tex_content)
 
         for _ in range(2):
-            r = subprocess.run(
+            subprocess.run(
                 ['pdflatex', '-interaction=batchmode',
                  '-halt-on-error', f'{job_name}.tex'],
                 cwd=tmpdir,
@@ -87,7 +93,7 @@ def compile_latex(tex_content: str, job_name: str = 'output') -> bytes:
             raise RuntimeError(f'pdflatex failed:\n{log}')
 
 
-# ── Topic database (Reporte de Tutorías) ──────────────────────────────────
+# ── Topic database ─────────────────────────────────────────────────────────
 
 TOPIC_DATABASE = {
     "1": [
