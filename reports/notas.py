@@ -111,6 +111,17 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
         df[df[c] > 0][c].mean() if not df[df[c] > 0].empty else 0.0
         for c in ca
     ]
+    # Signature as borderless multicolumn row inside longtable
+    sig_row = (
+        r"\noalign{\vspace{0.5cm}}"
+        r"\multicolumn{21}{c}{"
+        r"\begin{minipage}{8cm}\centering"
+        r"\rule{6cm}{0.4pt}\\"
+        r"\vspace{4pt}{\arialbold DOCENTE}"
+        r"\end{minipage}"
+        r"} \\"
+    )
+
     avg_row = (
         r"\noalign{\smallskip} \multicolumn{1}{c}{} & \multicolumn{1}{c}{} & "
         r"\multicolumn{1}{c}{\raisebox{-1.2mm}{\fontfamily{phv}\selectfont\bfseries PROMEDIOS}} & "
@@ -121,9 +132,7 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
         + r" & \multicolumn{1}{c}{} \\ \end{longtable}"
     )
 
-    sig = (r"\Needspace{3cm} \vspace{0.4cm} \begin{center} \begin{minipage}{8cm} \centering "
-           r"\rule{6cm}{0.4pt} \\ \vspace{4pt} {\arialbold DOCENTE} "
-           r"\end{minipage} \end{center} \end{document}")
+    sig = r"\end{document}"
 
     clean_code = tex_s(course_code.replace('_', '-').replace(' ', '-'))
     tex = (TEMPLATE_HEADER
@@ -131,6 +140,6 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
            .replace("%%CICLO%%",      clean_code)
            .replace("%%FACILITADOR%%", FACILITADOR)
            .replace("%%FECHA%%",      fecha)
-           + rows_latex + avg_row + sig)
+           + rows_latex + avg_row.replace(r"\end{longtable}", sig_row + r"\end{longtable}") + sig)
 
     return compile_latex(tex, 'notas')
