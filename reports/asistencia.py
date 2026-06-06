@@ -202,7 +202,7 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
         + r"{\fontsize{9}{9}\selectfont " + tex_s(fecha_examen) + r"}"
         + r"} \\" + "\n"
         + r"\multicolumn{21}{@{}l@{}}{"
-        + r"\hspace{1.58mm}{\fontsize{9}{9}\selectfont\bfseries SUPLETORIO:} \hspace{1mm}"
+        + r"{\fontsize{9}{9}\selectfont\bfseries SUPLETORIO:} "
         + r"{\fontsize{9}{9}\selectfont " + tex_s(fecha_sup) + r"}"
         + r"\hfill"
         + r"\begin{minipage}[t]{80mm}\centering"
