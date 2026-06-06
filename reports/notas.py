@@ -121,7 +121,7 @@ def generate_notas(df: pd.DataFrame, cycle_data: dict,
         + r" & \multicolumn{1}{c}{} \\ \end{longtable}"
     )
 
-    sig = (r"\Needspace{5cm} \vspace{1.9cm} \begin{center} \begin{minipage}{8cm} \centering "
+    sig = (r"\Needspace{3cm} \vspace{0.4cm} \begin{center} \begin{minipage}{8cm} \centering "
            r"\rule{6cm}{0.4pt} \\ \vspace{4pt} {\arialbold DOCENTE} "
            r"\end{minipage} \end{center} \end{document}")
 
