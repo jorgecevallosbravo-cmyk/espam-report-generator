@@ -284,9 +284,6 @@ generate = st.button(
 if btn_disabled:
     st.caption("Complete all required fields above to enable generation.")
 
-if not generate:
-    st.stop()
-
 # ── Generation ───────────────────────────────────────────────────────────────
 from reports.asistencia      import generate_asistencia
 from reports.notas           import generate_notas
@@ -294,11 +291,18 @@ from reports.informe_docente import generate_informe_docente
 from reports.informe_final   import generate_informe_final
 from reports.tutorias        import generate_tutorias
 
-progress = st.progress(0, text="Starting...")
-outputs  = {}   # {cycle_code: {report_name: bytes}}
+if generate:
+    from reports.asistencia      import generate_asistencia
+    from reports.notas           import generate_notas
+    from reports.informe_docente import generate_informe_docente
+    from reports.informe_final   import generate_informe_final
+    from reports.tutorias        import generate_tutorias
 
-total_steps = len(courses) * 6 + 1
-step = 0
+    progress = st.progress(0, text="Starting...")
+    outputs  = {}
+
+    total_steps = len(courses) * 6 + 1
+    step = 0
 
 # ── Per-course reports ────────────────────────────────────────────────────────
 for c in courses:
@@ -406,7 +410,10 @@ except Exception as e:
     tutorias_pdf = None
     st.error(f"Reporte de Tutorías failed: {e}")
 
-progress.progress(1.0, text="Done!")
+    progress.progress(1.0, text="Done!")
+    st.session_state["zip_outputs"]   = outputs
+    st.session_state["tutorias_pdf"]  = tutorias_pdf
+    st.session_state["zip_courses"]   = courses
 
 # ── Naming helpers ───────────────────────────────────────────────────────────
 import re as _re
@@ -439,10 +446,17 @@ def _make_prefix(filename, cycle_code):
     return f"{section}{cycle_code}-{parallel}", section, parallel
 
 # ── Build ZIPs ────────────────────────────────────────────────────────────────
+if "zip_outputs" not in st.session_state:
+    st.stop()
+
 st.markdown("---")
 st.subheader("📥 Download reports")
 
-for c in courses:
+outputs      = st.session_state["zip_outputs"]
+tutorias_pdf = st.session_state["tutorias_pdf"]
+zip_courses  = st.session_state["zip_courses"]
+
+for c in zip_courses:
     code  = c["cycle_code"]
     cdata = c["cycle_data"]
     fname = c["filename"]
