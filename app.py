@@ -44,7 +44,22 @@ if not check_password():
 
 # ── App header ─────────────────────────────────────────────────────────────
 st.markdown("## 📋 ESPAM MFL — Report Generator")
-st.markdown("*Jorge Cevallos Bravo · Ciclo 2026*")
+st.markdown("---")
+
+# ── Facilitator name ────────────────────────────────────────────────────────
+import utils as _utils
+col_name1, col_name2 = st.columns([2, 3])
+with col_name1:
+    facilitador_input = st.text_input(
+        "Facilitator name",
+        value="JORGE CEVALLOS BRAVO",
+        help="Your name as it will appear on all reports.",
+    )
+    facilitador_short = " ".join(w.capitalize() for w in facilitador_input.split())
+# Override the module-level constants with user input
+_utils.FACILITADOR       = facilitador_input.strip().upper() or "JORGE CEVALLOS BRAVO"
+_utils.FACILITADOR_SHORT = facilitador_short.strip() or "Jorge Cevallos Bravo"
+
 st.markdown("---")
 
 # ── STEP 1: Upload grade files ─────────────────────────────────────────────
