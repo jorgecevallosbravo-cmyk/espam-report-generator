@@ -182,7 +182,7 @@ Docente de la Unidad de Centro de Idiomas
 \end{longtable}}
 \renewcommand{\arraystretch}{1}
 
-\vspace{0.5em}
+\newpage
 \noindent\textbf{MOODLE:}
 
 \vspace{0.3em}
