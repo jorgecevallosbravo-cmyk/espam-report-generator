@@ -84,7 +84,7 @@ def generate_informe_docente(
     latex = r"""\documentclass[10pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[letterpaper, portrait, margin=1.5cm]{geometry}
-\usepackage{graphicx, array, longtable, colortbl, xcolor}
+\usepackage{graphicx, array, longtable, colortbl, xcolor, needspace}
 \usepackage[scaled]{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \definecolor{espamTeal}{RGB}{0, 169, 158}
@@ -119,6 +119,7 @@ def generate_informe_docente(
 """ + att_rows_diff + r"""
 \end{longtable}
 
+\Needspace{5cm}
 \vspace{4em}
 \begin{center}
 \rule{8cm}{0.4pt} \\
