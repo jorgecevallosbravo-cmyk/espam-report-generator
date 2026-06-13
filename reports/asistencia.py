@@ -147,7 +147,7 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
 
     all_dates = _get_class_dates(inicio, fin)
     if month is not None:
-        class_dates = [d for d in all_dates if (d.year, d.month) == month]
+        class_dates = [d for d in all_dates if (d.year, d.month) <= month][:NUM_DATES]
     else:
         class_dates = all_dates[:NUM_DATES]
     n_active = len(class_dates)
@@ -173,14 +173,16 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
 
     df['Codes'] = df.apply(_codes, axis=1)
 
-    # Random absences for 40% of eligible students
+    # Random absences for 40% of eligible students — seeded per student for consistency across reports
+    rng = random.Random(hash(course_code))
     eligible = df[df['Codes'].apply(lambda c: c.count("P") >= 2)].index.tolist()
     if eligible:
-        chosen = random.sample(eligible, round(len(eligible) * 0.40))
+        chosen = rng.sample(eligible, round(len(eligible) * 0.40))
         for idx in chosen:
             codes = df.at[idx, 'Codes'][:]
+            student_rng = random.Random(hash(str(df.at[idx, 'IDNumber']) + course_code))
             p_pos = [i for i, c in enumerate(codes) if c == "P"]
-            for pos in random.sample(p_pos, random.randint(1, min(2, len(p_pos)))):
+            for pos in student_rng.sample(p_pos, student_rng.randint(1, min(2, len(p_pos)))):
                 codes[pos] = "I"
             df.at[idx, 'Codes'] = codes
 
