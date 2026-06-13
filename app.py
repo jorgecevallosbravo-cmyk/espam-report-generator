@@ -285,7 +285,7 @@ if btn_disabled:
     st.caption("Complete all required fields above to enable generation.")
 
 # ── Generation ───────────────────────────────────────────────────────────────
-from reports.asistencia      import generate_asistencia, get_course_months
+from reports.asistencia      import generate_asistencia, get_course_months, MONTH_MAP as _MONTH_CODES
 from reports.notas           import generate_notas
 from reports.informe_docente import generate_informe_docente
 from reports.informe_final   import generate_informe_final
