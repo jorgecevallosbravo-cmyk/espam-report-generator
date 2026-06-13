@@ -285,7 +285,7 @@ if btn_disabled:
     st.caption("Complete all required fields above to enable generation.")
 
 # ── Generation ───────────────────────────────────────────────────────────────
-from reports.asistencia      import generate_asistencia
+from reports.asistencia      import generate_asistencia, get_course_months
 from reports.notas           import generate_notas
 from reports.informe_docente import generate_informe_docente
 from reports.informe_final   import generate_informe_final
@@ -294,7 +294,12 @@ from reports.tutorias        import generate_tutorias
 if generate:
     progress = st.progress(0, text="Starting...")
     outputs  = {}
-    total_steps = len(courses) * 6 + 1
+    n_att_steps = sum(
+        len(get_course_months(c['cycle_data']['inicio'], c['cycle_data']['fin']))
+        if c['cycle_data'] else 2
+        for c in courses
+    )
+    total_steps = n_att_steps + len(courses) * 4 + 1
     step = 0
 
     # ── Per-course reports ────────────────────────────────────────────────────
@@ -312,23 +317,20 @@ if generate:
 
         outputs[fname] = {}
 
-        # 1. Asistencia Final
-        step += 1
-        progress.progress(step / total_steps, text=f"{code}: Asistencia Final...")
-        try:
-            outputs[fname]["Asistencia_Final.pdf"] = generate_asistencia(
-                df_raw, cdata, horario, code, is_mensual=False)
-        except Exception as e:
-            st.error(f"{code} Asistencia Final failed: {e}")
-
-        # 2. Asistencia Mensual
-        step += 1
-        progress.progress(step / total_steps, text=f"{code}: Asistencia Mensual...")
-        try:
-            outputs[fname]["Asistencia_Mensual.pdf"] = generate_asistencia(
-                df_raw, cdata, horario, code, is_mensual=True)
-        except Exception as e:
-            st.error(f"{code} Asistencia Mensual failed: {e}")
+        # 1–N. Asistencia — one report per calendar month the course spans
+        course_months = get_course_months(cdata['inicio'], cdata['fin'])
+        for m_idx, (yr, mo) in enumerate(course_months):
+            m_code = _MONTH_CODES[mo]
+            step += 1
+            progress.progress(step / total_steps, text=f"{code}: Asistencia {m_code}...")
+            try:
+                outputs[fname][f"Asistencia_{m_code}.pdf"] = generate_asistencia(
+                    df_raw, cdata, horario, code,
+                    month=(yr, mo),
+                    is_first_month=(m_idx == 0 and len(course_months) > 1),
+                )
+            except Exception as e:
+                st.error(f"{code} Asistencia {m_code} failed: {e}")
 
         # 3. Notas Final
         step += 1
@@ -460,10 +462,8 @@ for c in zip_courses:
     m_fin    = _month_code(fin)
     m_range  = _months_range(inicio, fin)
 
-    # Correct filenames
+    # Correct filenames (attendance PDFs matched by prefix below)
     name_map = {
-        "Asistencia_Mensual.pdf":      f"{prefix}-ASI_{m_inicio}.pdf",
-        "Asistencia_Final.pdf":        f"{prefix}-ASI_{m_fin}.pdf",
         "Notas_Mensual.pdf":           f"{prefix}-CAL_{m_inicio}.pdf",
         "Notas_Final.pdf":             f"{prefix}-CAL_{m_fin}.pdf",
         "Informe_Final_del_Curso.pdf": f"{prefix}_IF.pdf",
@@ -476,7 +476,12 @@ for c in zip_courses:
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         for generic_name, pdf_bytes in reps.items():
-            final_name = name_map.get(generic_name, generic_name)
+            if generic_name.startswith("Asistencia_"):
+                # e.g. "Asistencia_APR.pdf" → "{prefix}-ASI_APR.pdf"
+                m_code = generic_name[len("Asistencia_"):-len(".pdf")]
+                final_name = f"{prefix}-ASI_{m_code}.pdf"
+            else:
+                final_name = name_map.get(generic_name, generic_name)
             zf.writestr(f"{folder}/{final_name}", pdf_bytes)
         # Add tutorías copy for this course
         if tutorias_pdf:
@@ -484,8 +489,9 @@ for c in zip_courses:
             zf.writestr(f"{folder}/{ta_name}", tutorias_pdf)
 
     zip_buf.seek(0)
+    n_reports = len(reps) + (1 if tutorias_pdf else 0)
     st.download_button(
-        label=f"⬇️  {zip_name}  (7 reports)",
+        label=f"⬇️  {zip_name}  ({n_reports} reports)",
         data=zip_buf.getvalue(),
         file_name=zip_name,
         mime="application/zip",
