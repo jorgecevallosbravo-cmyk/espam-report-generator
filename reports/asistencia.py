@@ -8,8 +8,7 @@ from utils import FACILITADOR, tex_s, compile_latex
 
 MONTH_MAP = {1:"JAN",2:"FEB",3:"MAR",4:"APR",5:"MAY",6:"JUN",
              7:"JUL",8:"AUG",9:"SEP",10:"OCT",11:"NOV",12:"DEC"}
-NUM_DATES    = 13
-NUM_MENSUAL  = 5
+NUM_DATES = 13   # fixed column count in the LaTeX template
 
 TEMPLATE = r"""\documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -87,22 +86,35 @@ def _parse_date(s):
     return date(int(y), int(m), int(d))
 
 
+def get_course_months(inicio: str, fin: str) -> list:
+    """Return [(year, month_int), ...] for every calendar month the course spans."""
+    start = _parse_date(inicio)
+    end   = _parse_date(fin)
+    months, y, m = [], start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        months.append((y, m))
+        m += 1
+        if m > 12:
+            m, y = 1, y + 1
+    return months
+
+
 def _get_class_dates(inicio, fin):
+    """Return every class date for the full course duration."""
     start = _parse_date(inicio)
     end   = _parse_date(fin)
     span  = (end - start).days
     weekdays = {0, 2, 4} if span <= 40 else {1, 3}
     dates, cur = [], start
-    while len(dates) < NUM_DATES:
+    while cur <= end:
         if cur.weekday() in weekdays:
             dates.append(cur)
         cur += timedelta(days=1)
-        if cur > end + timedelta(days=400):
-            break
     return dates
 
 
-def _make_row(row_num, name, doc, codes, is_mensual=False):
+def _make_row(row_num, name, doc, codes, n_active):
+    """n_active = real date columns; columns beyond that are padded with blanks up to NUM_DATES."""
     is_even = (row_num % 2 == 0)
     z = r"\cellcolor{colorAusente}" if is_even else ""
     att_cells = ""
@@ -110,9 +122,8 @@ def _make_row(row_num, name, doc, codes, is_mensual=False):
         if c == "P":   att_cells += r"\cellcolor{colorP}P&"
         elif c == "I": att_cells += r"\cellcolor{colorI}I&"
         else:          att_cells += "&"
-    if is_mensual:
-        for _ in range(NUM_DATES - NUM_MENSUAL):
-            att_cells += f"{z}&"
+    for _ in range(NUM_DATES - n_active):
+        att_cells += f"{z}&"
     p = codes.count("P")
     i = codes.count("I")
     return (f"\\datarow {z}{row_num}&{z}{doc}&{z}{name}&"
@@ -121,32 +132,46 @@ def _make_row(row_num, name, doc, codes, is_mensual=False):
 
 def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
                         horario: str, course_code: str,
-                        is_mensual: bool = False) -> bytes:
-    inicio = cycle_data['inicio']
-    fin    = cycle_data['fin']
+                        month: tuple = None,
+                        is_first_month: bool = False) -> bytes:
+    """
+    month          – (year, month_int) to restrict dates to one calendar month.
+                     Pass None to use the first NUM_DATES dates of the course (legacy).
+    is_first_month – True only for the first month when the course spans ≥2 months;
+                     uses LO_A + LO_B logic. Otherwise uses all logros.
+    """
+    inicio       = cycle_data['inicio']
+    fin          = cycle_data['fin']
     fecha_examen = cycle_data['examen']
     fecha_sup    = cycle_data['supletorio']
-    class_dates  = _get_class_dates(inicio, fin)
+
+    all_dates = _get_class_dates(inicio, fin)
+    if month is not None:
+        class_dates = [d for d in all_dates if (d.year, d.month) == month]
+    else:
+        class_dates = all_dates[:NUM_DATES]
+    n_active = len(class_dates)
 
     df = df.copy()
 
-    # Attendance codes
-    if is_mensual:
-        def codes_m(row):
+    # Attendance codes — unified, variable-length
+    def _codes(row):
+        n = n_active
+        if is_first_month:
             a, b = row['LO_A'], row['LO_B']
-            if a == 0.0 and b == 0.0: return ["I"] * NUM_MENSUAL
-            if a > 0 and b == 0.0:    return ["P"] + ["I"] * (NUM_MENSUAL - 1)
-            return ["P"] * NUM_MENSUAL
-        df['Codes'] = df.apply(codes_m, axis=1)
-    else:
-        def codes_f(row):
+            if a == 0.0 and b == 0.0: return ["I"] * n
+            if a > 0 and b == 0.0:    return ["P"] + ["I"] * (n - 1)
+            return ["P"] * n
+        else:
             a, b, c, d = row['LO_A'], row['LO_B'], row['LO_C'], row['LO_D']
             ex = row['Examen']
-            if a + b + c + d + ex == 0.0: return ["I"] * NUM_DATES
+            if a + b + c + d + ex == 0.0: return ["I"] * n
             if a > 0 and b == 0 and c == 0 and d == 0 and ex == 0.0:
-                return ["P"] * 3 + ["I"] * 10
-            return ["P"] * NUM_DATES
-        df['Codes'] = df.apply(codes_f, axis=1)
+                p_count = max(1, min(3, n))
+                return ["P"] * p_count + ["I"] * (n - p_count)
+            return ["P"] * n
+
+    df['Codes'] = df.apply(_codes, axis=1)
 
     # Random absences for 40% of eligible students
     eligible = df[df['Codes'].apply(lambda c: c.count("P") >= 2)].index.tolist()
@@ -167,15 +192,16 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
             tex_s(str(row.FullName)),
             tex_s(str(row.IDNumber)),
             row.Codes,
-            is_mensual,
+            n_active,
         ))
 
     if len(rows_latex) >= 2:
         rows_latex[-2] = "\\nopagebreak[4]\n" + rows_latex[-2]
         rows_latex[-1] = "\\nopagebreak[4]\n" + rows_latex[-1]
 
-    # Headers
+    # Headers — real day numbers, then blank padding
     day_cells = "".join(str(d.day).zfill(2) + "&" for d in class_dates)
+    day_cells += "&" * (NUM_DATES - n_active)
     month_placeholders = "".join(f"%%M{i}%%&" for i in range(1, 14))
     lt_header = (
         "\\hline\n"
@@ -225,5 +251,7 @@ def generate_asistencia(df: pd.DataFrame, cycle_data: dict,
 
     for i, d in enumerate(class_dates, start=1):
         tex = tex.replace(f"%%M{i}%%", MONTH_MAP[d.month])
+    for i in range(n_active + 1, NUM_DATES + 1):
+        tex = tex.replace(f"%%M{i}%%", "")
 
     return compile_latex(tex, 'asistencia')
